@@ -2,17 +2,20 @@ import os
 import numpy as np
 import pickle
 
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
-class CustomMinMaxScaler:
+class CustomStandardScaler:
     def __init__(self) -> None:
-        self.scaler = MinMaxScaler()
+        self.scaler = StandardScaler(with_mean=False, with_std=False)
 
-    def fit(self, file_dir):
+    def fit(self, file_dir, transformer = None):
         file_names = os.listdir(file_dir)
 
         for file_name in file_names:
             data = np.loadtxt(os.path.join(file_dir, file_name), dtype=np.float32)
+
+            if transformer is not None:
+                data = transformer.transform(data.reshape(1,-1))[0]
 
             self.scaler.partial_fit(data.reshape(1, -1))  # Reshape takes [x_1, x_2, x_3, ..., x_n] into [ [x_1, x_2, x_3, ..., x_n] ]
 
@@ -36,7 +39,7 @@ class CustomMinMaxScaler:
 if __name__ == "__main__":
     file_dir = "data/train"
 
-    scaler = CustomMinMaxScaler()
+    scaler = CustomStandardScaler()
 
     scaler.fit(file_dir)
 
@@ -52,8 +55,8 @@ if __name__ == "__main__":
     print("unscaled_X")
     print(unscaled_X)
 
-    scaler.save("scalers", "min_max_scaler.pickle")
-    scaler.load(os.path.join("scalers", "min_max_scaler.pickle"))
+    scaler.save("scalers", "standard_scaler.pickle")
+    scaler.load(os.path.join("scalers", "standard_scaler.pickle"))
 
     print("Loaded scaled_X")
     print(scaler.transform(X))

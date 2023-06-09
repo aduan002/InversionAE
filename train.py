@@ -8,7 +8,8 @@ import os
 
 from model import AutoEncoder
 from dataset import InversionDataset
-from scaler import CustomMinMaxScaler
+from scaler import CustomStandardScaler
+from pca import CustomPCA
 
 def train_loop(dataloader, model, loss_fn, optimizer):
     # Set the model to training mode - important for batch normalization and dropout layers
@@ -63,13 +64,20 @@ def main(config):
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
-    scaler = CustomMinMaxScaler()
-    scaler.fit(train_dir)
+    # PCA
+    pca = CustomPCA()
+    pca.fit(train_dir)
+    pca.save("PCAs", "pca.pickle")
 
-    train_data = InversionDataset(train_dir, scaler=scaler)
-    val_data = InversionDataset(val_dir, scaler=scaler)
+    # Scale
+    scaler = CustomStandardScaler()
+    scaler.fit(train_dir, pca)
+    scaler.save("Scalers", "standard_scaler.pickle")
 
-    train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    train_data = InversionDataset(train_dir, scaler=scaler, pca=pca)
+    val_data = InversionDataset(val_dir, scaler=scaler, pca=pca)
+
+    train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
 
     model = AutoEncoder(in_out_shape = train_data.__getitem__(0).shape)
@@ -94,8 +102,6 @@ def main(config):
             save_name = str(e).zfill(len(str(epochs))) + ".pt"
             save_model(model, save_dir, save_name)
 
-    scaler.save("scalers", "min_max_scaler.pickle")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -116,7 +122,7 @@ if __name__ == "__main__":
         #mode="disabled",
 
         project="Linear AutoEncoder",
-        name="Run 1",
+        name="Run 2",
         notes="Training Linear AutoEncoder on Inversion data",
         
         config = yaml_config.copy()

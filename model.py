@@ -6,16 +6,17 @@ class Encoder(nn.Module):
         super().__init__()
 
         self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
+        #self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
         
-        self.L1 = nn.Linear(in_features=input_shape[0], out_features=2048)
-        self.B1 = nn.BatchNorm1d(num_features=2048)
-        self.L2 = nn.Linear(in_features=2048, out_features=1024)
-        self.B2 = nn.BatchNorm1d(num_features=1024)
-        self.L3 = nn.Linear(in_features=1024, out_features=512)
-        self.B3 = nn.BatchNorm1d(num_features=512)
-        self.L4 = nn.Linear(in_features=512, out_features=256)
-        self.B4 = nn.BatchNorm1d(num_features=256)
+        self.L1 = nn.Linear(in_features=input_shape[0], out_features=512)
+        self.B1 = nn.BatchNorm1d(num_features=512)
+        self.L2 = nn.Linear(in_features=512, out_features=256)
+        self.B2 = nn.BatchNorm1d(num_features=256)
+        self.L3 = nn.Linear(in_features=256, out_features=128)
+        self.B3 = nn.BatchNorm1d(num_features=128)
+        self.L4 = nn.Linear(in_features=128, out_features=64)
+        self.B4 = nn.BatchNorm1d(num_features=64)
 
     def forward(self, x):
         output = self.L1(x)
@@ -29,7 +30,7 @@ class Encoder(nn.Module):
         output = self.relu(output)
         output = self.L4(output)
         output = self.B4(output)
-        output = self.sigmoid(output)
+        output = self.tanh(output)
         return output
 
 class Decoder(nn.Module):
@@ -37,15 +38,16 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.relu = nn.ReLU()
-        #self.sigmoid = nn.sigmoid()
+        #self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
 
-        self.L1 = nn.Linear(in_features=256, out_features=512)
-        self.B1 = nn.BatchNorm1d(num_features=512)
-        self.L2 = nn.Linear(in_features=512, out_features=1024)
-        self.B2 = nn.BatchNorm1d(num_features=1024)
-        self.L3 = nn.Linear(in_features=1024, out_features=2048)
-        self.B3 = nn.BatchNorm1d(num_features=2048)
-        self.L4 = nn.Linear(in_features=2048, out_features=output_shape[0])
+        self.L1 = nn.Linear(in_features=64, out_features=128)
+        self.B1 = nn.BatchNorm1d(num_features=128)
+        self.L2 = nn.Linear(in_features=128, out_features=256)
+        self.B2 = nn.BatchNorm1d(num_features=256)
+        self.L3 = nn.Linear(in_features=256, out_features=512)
+        self.B3 = nn.BatchNorm1d(num_features=512)
+        self.L4 = nn.Linear(in_features=512, out_features=output_shape[0])
 
     def forward(self, x):
         output = self.L1(x)
@@ -58,7 +60,7 @@ class Decoder(nn.Module):
         output = self.B3(output)
         output = self.relu(output)
         output = self.L4(output)
-        output = self.relu(output)
+        #output = self.tanh(output) # NOTE: Right now, the input is between -15.9147 and 16.0816 by doing PCA and then Standard Scaling...
         return output
 
 class AutoEncoder(nn.Module):
