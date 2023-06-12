@@ -1,0 +1,5 @@
+# Initialize sweep through commandline
+wandb sweep --project "Linear AutoEncoder" sweeps/config.yaml
+
+# Run sweep
+wandb agent --count 1 username/project/sweepID

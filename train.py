@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 import wandb
 import argparse
 import yaml
+import json
 from tqdm import tqdm
 import os
 
@@ -11,12 +12,13 @@ from dataset import InversionDataset
 from scaler import CustomStandardScaler
 from pca import CustomPCA
 
-def train_loop(dataloader, model, loss_fn, optimizer):
+def train_loop(dataloader, model, loss_fn, optimizer, device):
     # Set the model to training mode - important for batch normalization and dropout layers
     model.train()
     num_batches = len(dataloader)
     train_loss = 0
     for batch, tensor in enumerate(tqdm(dataloader)):
+        tensor = tensor.to(device)
         # Compute prediction and loss
         pred = model(tensor)
         loss = loss_fn(pred, tensor)
@@ -31,7 +33,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     train_loss /= num_batches
     return train_loss
 
-def val_loop(dataloader, model, loss_fn):
+def val_loop(dataloader, model, loss_fn, device):
     # Set the model to evaluation mode - important for batch normalization and dropout layers
     model.eval()
     num_batches = len(dataloader)
@@ -39,6 +41,7 @@ def val_loop(dataloader, model, loss_fn):
 
     with torch.no_grad():
         for batch, tensor in enumerate(tqdm(dataloader)):
+            tensor = tensor.to(device)
             pred = model(tensor)
             loss = loss_fn(pred, tensor)
 
@@ -50,14 +53,17 @@ def val_loop(dataloader, model, loss_fn):
 def save_model(model, save_dir, save_name):
     torch.save(model.state_dict(), os.path.join(save_dir, save_name))
 
-def main(config):    
+def main(config, hyp):    
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    
     train_dir = config["data"]["train"]
     val_dir = config["data"]["val"]
 
-    batch_size = config["hp"]["batch_size"]
-    epochs = config["hp"]["epochs"]
-    learning_rate = config["hp"]["learning_rate"]
-    weight_decay = config["hp"]["weight_decay"]
+    batch_size = hyp["batch_size"]
+    epochs = hyp["epochs"]
+    learning_rate = hyp["learning_rate"]
+    weight_decay = hyp["weight_decay"]
+    patience = hyp["patience"]
 
     save_dir = config["model"]["save_dir"]
     save_freq = config["model"]["save_freq"]
@@ -81,26 +87,38 @@ def main(config):
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
 
     model = AutoEncoder(in_out_shape = train_data.__getitem__(0).shape)
+    model.to(device)
 
     loss_fn = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(),
                                 lr = learning_rate,
                                 weight_decay = weight_decay)
     
+    early_stop_count = 0
+    early_stop_val_loss = None
     for e in range(1, epochs + 1):
         print("Epoch:", e)
         
         print("Training:")
-        train_loss = train_loop(train_dataloader, model, loss_fn, optimizer)
+        train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, device)
         
         print("Validation:")
-        val_loss = val_loop(val_dataloader, model, loss_fn) 
+        val_loss = val_loop(val_dataloader, model, loss_fn, device) 
 
         wandb.log({"train_mse_loss": train_loss, "val_mse_loss": val_loss})
 
         if e % save_freq == 0:
             save_name = str(e).zfill(len(str(epochs))) + ".pt"
             save_model(model, save_dir, save_name)
+
+        if early_stop_val_loss is None or val_loss <= early_stop_val_loss:
+            early_stop_val_loss = val_loss
+            early_stop_count = 0
+        else:
+            early_stop_count += 1
+        if early_stop_count == patience:
+            print("Early stopping after {0} epochs".format(early_stop_count))
+            break
 
 
 if __name__ == "__main__":
@@ -109,23 +127,28 @@ if __name__ == "__main__":
          description = "Training an AutoEncoder using Linear Layers"
     )
     parser.add_argument("-c", "--config", required=True)
+    parser.add_argument("-p", "--hyp", required=True)
     args = parser.parse_args()
     config_path = args.config
+    hyp_path = args.hyp
 
     with open(config_path, "r") as file:
         try:
             yaml_config = yaml.safe_load(file)
         except yaml.YAMLError as e:
             print(e)
+    
+    with open(hyp_path, "r") as file:
+        json_hyp = json.load(file)
 
     wandb.init(
-        #mode="disabled",
+        mode="disabled",
 
         project="Linear AutoEncoder",
-        name="Run 2",
+        name="Test Run 1",
         notes="Training Linear AutoEncoder on Inversion data",
         
-        config = yaml_config.copy()
+        config = json_hyp.copy()
     )
-    main(yaml_config)
+    main(yaml_config, json_hyp)
     wandb.finish()

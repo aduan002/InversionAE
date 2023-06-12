@@ -2,12 +2,6 @@ data:
   train: data/train
   val: data/val
 
-hp:
-  epochs: 10
-  batch_size: 32
-  learning_rate: 0.001
-  weight_decay: 1.0e-8
-
 model:
   save_dir: weights
   save_freq: 10
