@@ -95,7 +95,7 @@ def main(config, hyp):
                                 weight_decay = weight_decay)
     
     early_stop_count = 0
-    early_stop_val_loss = None
+    prev_val_loss = None
     for e in range(1, epochs + 1):
         print("Epoch:", e)
         
@@ -111,14 +111,22 @@ def main(config, hyp):
             save_name = str(e).zfill(len(str(epochs))) + ".pt"
             save_model(model, save_dir, save_name)
 
-        if early_stop_val_loss is None or val_loss <= early_stop_val_loss:
-            early_stop_val_loss = val_loss
-            early_stop_count = 0
-        else:
+        if prev_val_loss is None:
+            prev_val_loss = val_loss
+
+        # The idea is that if the val loss has increased patience times in a row, stop training.
+        delta = val_loss - prev_val_loss
+        if delta > 0:
             early_stop_count += 1
+        else:
+            early_stop_count = 0
+
+        prev_val_loss = val_loss
+
         if early_stop_count == patience:
-            print("Early stopping after {0} epochs".format(early_stop_count))
+            print("Early stopping after {0} epochs...".format(e))
             break
+
 
 
 if __name__ == "__main__":
