@@ -3,5 +3,13 @@
     "epochs": 10,
     "learning_rate": 0.001,
     "patience": 20,
-    "weight_decay": 1.0e-8
+    "weight_decay": 1.0e-8,
+    "kernel_size": {
+        "depth": 3,
+        "height": 3,
+        "width": 1
+    },
+    "stride": 1,
+    "padding": 0,
+    "num_hidden_layers": 3
 }

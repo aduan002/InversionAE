@@ -5,17 +5,19 @@ import pickle
 from sklearn.preprocessing import StandardScaler
 
 class CustomStandardScaler:
-    def __init__(self) -> None:
+    def __init__(self, transformer = None) -> None:
         self.scaler = StandardScaler(with_mean=False, with_std=False)
 
-    def fit(self, file_dir, transformer = None):
+        self.transformer = transformer
+
+    def fit(self, file_dir):
         file_names = os.listdir(file_dir)
 
         for file_name in file_names:
             data = np.loadtxt(os.path.join(file_dir, file_name), dtype=np.float32)
 
-            if transformer is not None:
-                data = transformer.transform(data.reshape(1,-1))[0]
+            if self.transformer is not None:
+                data = self.transformer.transform(data.reshape(1,-1))[0]
 
             self.scaler.partial_fit(data.reshape(1, -1))  # Reshape takes [x_1, x_2, x_3, ..., x_n] into [ [x_1, x_2, x_3, ..., x_n] ]
 

@@ -2,72 +2,45 @@ import torch
 from torch import nn
 
 class Encoder(nn.Module):
-    def __init__(self, input_shape) -> None:
+    def __init__(self, input_shape, kernel_size = (3,3,1), stride = 1, padding = 0, num_hidden_layers = 2) -> None:
         super().__init__()
 
-        self.relu = nn.ReLU()
-        #self.sigmoid = nn.Sigmoid()
-        self.tanh = nn.Tanh()
-        
-        self.L1 = nn.Linear(in_features=input_shape[0], out_features=512)
-        self.B1 = nn.BatchNorm1d(num_features=512)
-        self.L2 = nn.Linear(in_features=512, out_features=256)
-        self.B2 = nn.BatchNorm1d(num_features=256)
-        self.L3 = nn.Linear(in_features=256, out_features=128)
-        self.B3 = nn.BatchNorm1d(num_features=128)
-        self.L4 = nn.Linear(in_features=128, out_features=64)
-        self.B4 = nn.BatchNorm1d(num_features=64)
+        self.layers = nn.ModuleList()
+
+        for _ in range(num_hidden_layers):
+            self.layers.append(nn.Conv3d(in_channels=1, out_channels=1, kernel_size=kernel_size, stride=stride, padding=padding))
+            self.layers.append(nn.ReLU())
+        self.layers.append(nn.MaxPool3d(kernel_size=kernel_size))
+
 
     def forward(self, x):
-        output = self.L1(x)
-        output = self.B1(output)
-        output = self.relu(output)
-        output = self.L2(output)
-        output = self.B2(output)
-        output = self.relu(output)
-        output = self.L3(output)
-        output = self.B3(output)
-        output = self.relu(output)
-        output = self.L4(output)
-        output = self.B4(output)
-        output = self.tanh(output)
-        return output
+        for layer in self.layers:
+            x = layer(x)
+        return x
 
 class Decoder(nn.Module):
-    def __init__(self, output_shape) -> None:
+    def __init__(self, output_shape, kernel_size = (3,3,1), stride = 1, padding = 0, num_hidden_layers = 2) -> None:
         super().__init__()
 
-        self.relu = nn.ReLU()
-        #self.sigmoid = nn.Sigmoid()
-        self.tanh = nn.Tanh()
+        self.layers = nn.ModuleList()
 
-        self.L1 = nn.Linear(in_features=64, out_features=128)
-        self.B1 = nn.BatchNorm1d(num_features=128)
-        self.L2 = nn.Linear(in_features=128, out_features=256)
-        self.B2 = nn.BatchNorm1d(num_features=256)
-        self.L3 = nn.Linear(in_features=256, out_features=512)
-        self.B3 = nn.BatchNorm1d(num_features=512)
-        self.L4 = nn.Linear(in_features=512, out_features=output_shape[0])
+        for _ in range(num_hidden_layers):
+            self.layers.append(nn.ConvTranspose3d(in_channels=1, out_channels=1, kernel_size=kernel_size, stride=stride, padding=padding))
+            self.layers.append(nn.ReLU())
+
+        self.output_shape = output_shape
 
     def forward(self, x):
-        output = self.L1(x)
-        output = self.B1(output)
-        output = self.relu(output)
-        output = self.L2(output)
-        output = self.B2(output)
-        output = self.relu(output)
-        output = self.L3(output)
-        output = self.B3(output)
-        output = self.relu(output)
-        output = self.L4(output)
-        #output = self.tanh(output) # NOTE: Right now, the input is between -15.9147 and 16.0816 by doing PCA and then Standard Scaling...
-        return output
+        for layer in self.layers:
+            x = layer(x)
+        return nn.Upsample(size=self.output_shape[1:])(x) 
 
 class AutoEncoder(nn.Module):
-    def __init__(self, in_out_shape) -> None:
+    def __init__(self, in_out_shape, kernel_size = (3,3,1), stride = 1, padding = 0, num_hidden_layers = 2) -> None:
         super().__init__()
-        self.encoder = Encoder(input_shape=in_out_shape)
-        self.decoder = Decoder(output_shape=in_out_shape)
+        # in_out_shape should be channels, depth, height, width
+        self.encoder = Encoder(input_shape=in_out_shape, kernel_size=kernel_size, stride=stride, padding=padding, num_hidden_layers=num_hidden_layers)
+        self.decoder = Decoder(output_shape=in_out_shape, kernel_size=kernel_size, stride=stride, padding=padding, num_hidden_layers=num_hidden_layers)
 
     def forward(self, x):
         output = self.encoder(x)

@@ -1,6 +1,7 @@
 data:
-  train: data/train
-  val: data/val
+  train: filtered_data/train
+  val: filtered_data/val
+  aux: aux_data/spatial.txt
 
 model:
   save_dir: weights

@@ -9,8 +9,8 @@ import os
 
 from model import AutoEncoder
 from dataset import InversionDataset
-from scaler import CustomStandardScaler
-from pca import CustomPCA
+from transformations.scaler import CustomStandardScaler
+from transformations.reshaper import FileSpatialReshape as SpatialReshape
 
 def train_loop(dataloader, model, loss_fn, optimizer, device):
     # Set the model to training mode - important for batch normalization and dropout layers
@@ -65,28 +65,38 @@ def main(config, hyp):
     weight_decay = hyp["weight_decay"]
     patience = hyp["patience"]
 
+    kernel_size = (hyp["kernel_size"]["depth"], hyp["kernel_size"]["height"], hyp["kernel_size"]["width"])
+    stride = hyp["stride"]
+    padding = hyp["padding"]
+    num_hidden_layers = hyp["num_hidden_layers"]
+
     save_dir = config["model"]["save_dir"]
     save_freq = config["model"]["save_freq"]
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
-    # PCA
-    pca = CustomPCA()
-    pca.fit(train_dir)
-    pca.save("PCAs", "pca.pickle")
-
     # Scale
     scaler = CustomStandardScaler()
-    scaler.fit(train_dir, pca)
+    scaler.fit(train_dir)
     scaler.save("Scalers", "standard_scaler.pickle")
 
-    train_data = InversionDataset(train_dir, scaler=scaler, pca=pca)
-    val_data = InversionDataset(val_dir, scaler=scaler, pca=pca)
+    # Reshape from 1D to 3D Depth, Height, Width
+    spatial_reshape_path = config["data"]["aux"]
+    reshaper = SpatialReshape(spatial_reshape_path)
+    reshaper.build_reshape()
+    reshaper.save("Reshapers", "spatial_reshape.pickle")
+
+    train_data = InversionDataset(train_dir, scaler=scaler, reshaper=reshaper)
+    val_data = InversionDataset(val_dir, scaler=scaler, reshaper=reshaper)
 
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
 
-    model = AutoEncoder(in_out_shape = train_data.__getitem__(0).shape)
+    model = AutoEncoder(in_out_shape = train_data.__getitem__(0).shape, 
+                        kernel_size=kernel_size, 
+                        stride=stride, 
+                        padding=padding, 
+                        num_hidden_layers=num_hidden_layers)
     model.to(device)
 
     loss_fn = torch.nn.MSELoss()
@@ -128,11 +138,10 @@ def main(config, hyp):
             break
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-         prog = "Linear AutoEncoder",
-         description = "Training an AutoEncoder using Linear Layers"
+         prog = "Convolutional AutoEncoder",
+         description = "Training an AutoEncoder using Convolutional Layers and the given spatial correlation"
     )
     parser.add_argument("-c", "--config", required=True)
     parser.add_argument("-p", "--hyp", required=True)
@@ -150,11 +159,11 @@ if __name__ == "__main__":
         json_hyp = json.load(file)
 
     wandb.init(
-        mode="disabled",
+        #mode="disabled",
 
-        project="Linear AutoEncoder",
+        project="Convolutional AutoEncoder",
         name="Test Run 1",
-        notes="Training Linear AutoEncoder on Inversion data",
+        notes="Training Convolutional AutoEncoder on Inversion data using the given coordinates to reshape",
         
         config = json_hyp.copy()
     )
