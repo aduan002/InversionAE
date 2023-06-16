@@ -17,7 +17,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
     model.train()
     num_batches = len(dataloader)
     train_loss = 0
-    for batch, tensor in enumerate(tqdm(dataloader)):
+    for batch, (tensor, _) in enumerate(tqdm(dataloader)):
         tensor = tensor.to(device)
         # Compute prediction and loss
         pred = model(tensor)
@@ -40,7 +40,7 @@ def val_loop(dataloader, model, loss_fn, device):
     val_loss = 0
 
     with torch.no_grad():
-        for batch, tensor in enumerate(tqdm(dataloader)):
+        for batch, (tensor, _) in enumerate(tqdm(dataloader)):
             tensor = tensor.to(device)
             pred = model(tensor)
             loss = loss_fn(pred, tensor)
@@ -86,7 +86,7 @@ def main(config, hyp):
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
 
-    model = AutoEncoder(in_out_shape = train_data.__getitem__(0).shape)
+    model = AutoEncoder(in_out_shape = train_data.__getitem__(0)[0].shape)
     model.to(device)
 
     loss_fn = torch.nn.MSELoss()
@@ -150,10 +150,10 @@ if __name__ == "__main__":
         json_hyp = json.load(file)
 
     wandb.init(
-        mode="disabled",
+        #mode="disabled",
 
         project="Linear AutoEncoder",
-        name="Test Run 1",
+        name="Test Run 3",
         notes="Training Linear AutoEncoder on Inversion data",
         
         config = json_hyp.copy()

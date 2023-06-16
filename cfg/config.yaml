@@ -1,7 +1,0 @@
-data:
-  train: data/train
-  val: data/val
-
-model:
-  save_dir: weights
-  save_freq: 10

@@ -31,4 +31,4 @@ class InversionDataset(Dataset):
             item = self.scaler.transform(item.reshape(1, -1))[0]
         
         item = item.astype(np.float32)
-        return torch.from_numpy(item)
+        return torch.from_numpy(item), file_name

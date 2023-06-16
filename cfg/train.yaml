@@ -1,0 +1,7 @@
+data:
+  train: filtered_data/train
+  val: filtered_data/val
+
+model:
+  save_dir: weights
+  save_freq: 10
