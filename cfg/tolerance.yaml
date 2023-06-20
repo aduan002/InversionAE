@@ -1,0 +1,8 @@
+data: filtered_data/train
+save_dir: bounds
+scaler: Scalers/standard_scaler.pickle
+reshaper: Reshapers/spatial_reshape.pickle
+weights: weights/10.pt
+
+confidence: 0.99
+coverage: 0.99

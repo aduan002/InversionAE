@@ -10,7 +10,7 @@ import os
 from model import AutoEncoder
 from dataset import InversionDataset
 from transformations.scaler import CustomStandardScaler
-from transformations.reshaper import FileSpatialReshape as SpatialReshape
+from transformations.reshaper import FileSpatialReshaper as SpatialReshaper
 
 def train_loop(dataloader, model, loss_fn, optimizer, device):
     # Set the model to training mode - important for batch normalization and dropout layers
@@ -73,7 +73,7 @@ def main(config, hyp):
     save_dir = config["model"]["save_dir"]
     save_freq = config["model"]["save_freq"]
     if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
+        os.makedirs(save_dir)
 
     # Scale
     scaler = CustomStandardScaler()
@@ -82,7 +82,7 @@ def main(config, hyp):
 
     # Reshape from 1D to 3D Depth, Height, Width
     spatial_reshape_path = config["data"]["aux"]
-    reshaper = SpatialReshape(spatial_reshape_path)
+    reshaper = SpatialReshaper(spatial_reshape_path)
     reshaper.build_reshape()
     reshaper.save("Reshapers", "spatial_reshape.pickle")
 

@@ -4,12 +4,12 @@ import numpy as np
 import pickle
 from sklearn.preprocessing import OrdinalEncoder
 
-class FileSpatialReshape:
-    def __init__(self, file_path) -> None:
+class FileSpatialReshaper:
+    def __init__(self, file_path = None) -> None:
+        # NOTE: Filepath should only be "None" when loading a reshaper, not building it.
         self.file_path = file_path
 
         self.coordinates = {} # x,y,z coordinates for the ith row, but not all rows are present here.
-
         self.encoder = OrdinalEncoder(dtype=int)
 
         self.size_x = None
@@ -127,13 +127,39 @@ class FileSpatialReshape:
             }
 
 
+    def inverse_transform(self, shaped_tensors):
+        orig_tensors = np.zeros((shaped_tensors.shape[0], len(self.coordinates)))
+
+        for batch_idx in range(len(shaped_tensors)):
+            shaped_tensor = shaped_tensors[batch_idx]
+            orig_tensor = np.zeros((len(self.coordinates)))
+
+            idx = 0
+            for row in sorted(self.coordinates):
+                coords = self.coordinates[row]
+
+                channel = 0
+                z = coords["z"]
+                y = coords["y"]
+                x = coords["x"]
+                cell_value = shaped_tensor[channel][z][y][x]
+
+                orig_tensor[idx] = cell_value
+                idx += 1
+
+            orig_tensors[batch_idx] = orig_tensor
+        return orig_tensors
+
     def save(self, file_dir, file_name):
         if not os.path.exists(file_dir):
             os.mkdir(file_dir)
 
         save_content = {
             "encoder": self.encoder,
-            "coordinates": self.coordinates
+            "coordinates": self.coordinates,
+            "size_x": self.size_x,
+            "size_y": self.size_y,
+            "size_z": self.size_z
         }
 
         with open(os.path.join(file_dir, file_name), "wb") as file:
@@ -145,10 +171,74 @@ class FileSpatialReshape:
 
         self.encoder = save_content["encoder"]
         self.coordinates = save_content["coordinates"]
+        self.size_x = save_content["size_x"]
+        self.size_y = save_content["size_y"]
+        self.size_z = save_content["size_z"]
 
 
 
 if __name__ == "__main__":
+    file_dir = "filtered_data/train"
+    file_name = "FA3_8L20220928_2001.sig"
+
+    reshaper = FileSpatialReshaper("aux_data/spatial.txt")
+    reshaper.build_reshape()
+    reshaper.save("Reshapers", "spatial_reshape.pickle")
+
+    channels = 1
+    depth = reshaper.size_z
+    height = reshaper.size_y
+    width = reshaper.size_x
+
+    item = np.loadtxt(os.path.join(file_dir, file_name), dtype=np.float32)
+    reconstruction_item = np.zeros((item.shape), dtype=np.float32)
+
+    shape_item = np.zeros((channels, depth, height, width), dtype=np.float32)
+    idx = 0
+    for row in sorted(reshaper.coordinates):
+        coords = reshaper.coordinates[row]
+
+        cell_value = item[idx]
+        channel = 0
+        z = coords["z"]
+        y = coords["y"]
+        x = coords["x"]
+
+        shape_item[channel][z][y][x] = cell_value
+
+        idx += 1
+
+    # NOTE: This is how you do the reconstruction
+    idx = 0
+    for row in sorted(reshaper.coordinates):
+        coords = reshaper.coordinates[row]
+
+        channel = 0
+        z = coords["z"]
+        y = coords["y"]
+        x = coords["x"]
+        cell_value = shape_item[channel][z][y][x]
+
+        reconstruction_item[idx] = cell_value
+        idx += 1
+
+    print("#####################################################")
+    print((item == reconstruction_item).all())
+    print("#####################################################")
+
+
+
+
+
+
+
+
+
+
+
+    # NOTE: Below here there are some previous test cases.
+    exit()
+    
     import time
 
     file_dir = "Reshapes"

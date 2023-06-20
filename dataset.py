@@ -60,4 +60,4 @@ class InversionDataset(Dataset):
 
         
         item = item.astype(np.float32)
-        return torch.from_numpy(item)
+        return torch.from_numpy(item), file_name
