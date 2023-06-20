@@ -68,7 +68,7 @@ def main(config, hyp):
     save_dir = config["model"]["save_dir"]
     save_freq = config["model"]["save_freq"]
     if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
+        os.makedirs(save_dir)
 
     # PCA
     pca = CustomPCA()

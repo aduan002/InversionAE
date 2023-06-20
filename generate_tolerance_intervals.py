@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import argparse
 import yaml
-import pandas as pd
 import numpy as np
 import os
 from scipy.stats import norm
@@ -123,7 +122,6 @@ def main(config):
                 samples[idx] = error
                 idx += 1
 
-    samples = samples[:,:1000]
     upper_bounds = np.zeros((samples.shape[1]))
     print("Calculating Upper Bounds:")
     for idx in tqdm(range(samples.shape[1])):

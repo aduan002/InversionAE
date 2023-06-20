@@ -1,8 +1,8 @@
-data: data_small/val
+data: filtered_data/train
 save_dir: bounds
-scaler: Scalers/standard_scaler.pickle
-pca: PCAs/pca.pickle
-weights: weights/best_so_far.pt
+scaler: Scalers_filtered/standard_scaler.pickle
+pca: PCAs_filtered/pca.pickle
+weights: weights/ydfbys5d_120.pt
 
 confidence: 0.99
 coverage: 0.99
