@@ -14,6 +14,7 @@ from model import AutoEncoder
 
 def percent_error(y, y_hat):
     difference = torch.abs(y - y_hat)
+    difference[difference<0] = 0  # y-y_hat<0 implies low conductivty anomaly... not anomaly
     exact = torch.abs(y)
     percent_error = difference / exact * 100
     return percent_error
@@ -53,8 +54,11 @@ def main(config):
     model.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu')))
     model.eval()
 
+    stats = pd.DataFrame(columns=["Filename", "Normal Count", "Anomalous Count"])
+
     with torch.no_grad():
         for batch, (tensor, filename) in enumerate(tqdm(dataloader)):
+            filename = filename[0] # for some reason, this returns the filename as (filename,) # TODO: Fix it.
             tensor = tensor.to(device)
             pred = model(tensor)
             tensor = tensor.to("cpu")
@@ -71,10 +75,17 @@ def main(config):
                 delta[delta < 0] = 0
 
                 if np.any(delta):
-                    print("Anomaly within {0}...".format(filename))
+                    #print("Anomaly within {0}...".format(filename))
+                    pass
 
                 save_name = filename.split(".")[0] + ".sig"
                 np.savetxt(os.path.join(save_dir, save_name), delta, fmt="%s")
+
+                normalCount = len(delta[delta==0])
+                anomalousCount = len(delta[delta!=0])
+                row = [filename, normalCount, anomalousCount]
+                stats.loc[len(stats)] = row
+        stats.to_csv("stats.csv", index=False)
 
 
 if __name__ == "__main__":

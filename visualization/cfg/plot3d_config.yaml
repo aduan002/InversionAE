@@ -1,0 +1,11 @@
+input_path: "results_obj" # Can be a file or a folder
+show_plot: False
+save_image: True
+save_dir: "visualization/images" # Only used if save_image is True. Must be a directory.
+
+color_scheme: # Colors must be between 0-1, and in RGB format
+  # Bottom color
+  - 0,0,0.545 # Dark Blue
+  - 1,0.843,0 # Gold
+  - 1,0,0     # Bright Read
+  # Top color
