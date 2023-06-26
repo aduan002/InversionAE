@@ -7,8 +7,8 @@ import pandas as pd
 import numpy as np
 import os
 
-from pca import CustomPCA
-from scaler import CustomStandardScaler
+from transformations.pca import CustomPCA
+from transformations.scaler import PartialStandardScaler, FullStandardScaler
 from dataset import InversionDataset
 from model import AutoEncoder
 
@@ -35,7 +35,7 @@ def main(config):
 
     scaler = None
     if scaler_path is not None:
-        scaler = CustomStandardScaler()
+        scaler = PartialStandardScaler()
         scaler.load(scaler_path)
 
     upper_bounds = None

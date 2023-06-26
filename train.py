@@ -9,18 +9,18 @@ import os
 
 from model import AutoEncoder
 from dataset import InversionDataset
-from scaler import CustomStandardScaler
-from pca import CustomPCA
+from transformations.scaler import PartialStandardScaler, FullStandardScaler
+from transformations.pca import CustomPCA
 
 def train_loop(dataloader, model, loss_fn, optimizer, device):
     # Set the model to training mode - important for batch normalization and dropout layers
     model.train()
     num_batches = len(dataloader)
     train_loss = 0
-    for batch, (tensor, _) in enumerate(tqdm(dataloader)):
+    for batch, (tensor, aux_tensor, _) in enumerate(tqdm(dataloader)):
         tensor = tensor.to(device)
         # Compute prediction and loss
-        pred = model(tensor)
+        pred = model(tensor, aux_tensor)
         loss = loss_fn(pred, tensor)
 
         # Backpropagation
@@ -40,9 +40,9 @@ def val_loop(dataloader, model, loss_fn, device):
     val_loss = 0
 
     with torch.no_grad():
-        for batch, (tensor, _) in enumerate(tqdm(dataloader)):
+        for batch, (tensor, aux_tensor, _) in enumerate(tqdm(dataloader)):
             tensor = tensor.to(device)
-            pred = model(tensor)
+            pred = model(tensor, aux_tensor)
             loss = loss_fn(pred, tensor)
 
             val_loss += loss.item()
@@ -58,12 +58,18 @@ def main(config, hyp):
     
     train_dir = config["data"]["train"]
     val_dir = config["data"]["val"]
+    aux_filepath = config["data"]["aux_data"]
 
     batch_size = hyp["batch_size"]
     epochs = hyp["epochs"]
     learning_rate = hyp["learning_rate"]
     weight_decay = hyp["weight_decay"]
     patience = hyp["patience"]
+
+    linear_num_hidden_layers = hyp["linear_num_hidden_layers"]
+    lstm_hidden_size = hyp["lstm_hidden_size"]
+    lstm_num_hidden_layers = hyp["lstm_num_hidden_layers"]
+    lstm_dropout = hyp["lstm_dropout"]
 
     save_dir = config["model"]["save_dir"]
     save_freq = config["model"]["save_freq"]
@@ -76,17 +82,26 @@ def main(config, hyp):
     pca.save("PCAs", "pca.pickle")
 
     # Scale
-    scaler = CustomStandardScaler()
+    scaler = PartialStandardScaler()
     scaler.fit(train_dir, pca)
-    scaler.save("Scalers", "standard_scaler.pickle")
+    scaler.save("Scalers", "partial_standard_scaler.pickle")
 
-    train_data = InversionDataset(train_dir, scaler=scaler, pca=pca)
-    val_data = InversionDataset(val_dir, scaler=scaler, pca=pca)
+    aux_scaler = FullStandardScaler()
+
+    train_data = InversionDataset(train_dir, aux_filepath, scaler=scaler, pca=pca, aux_scaler=aux_scaler)
+    val_data = InversionDataset(val_dir, aux_filepath, scaler=scaler, pca=pca, aux_scaler=aux_scaler)
+
+    aux_scaler.save("Scalers", "full_standard_scaler.pickle")
 
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
 
-    model = AutoEncoder(in_out_shape = train_data.__getitem__(0)[0].shape)
+    model = AutoEncoder(in_out_shape = train_data.__getitem__(0)[0].shape, 
+                        linear_num_hidden_layers=linear_num_hidden_layers, 
+                        lstm_input_shape=train_data.__getitem__(0)[1].shape,
+                        lstm_hidden_size=lstm_hidden_size,
+                        lstm_num_hidden_layers=lstm_num_hidden_layers,
+                        lstm_dropout=lstm_dropout)
     model.to(device)
 
     loss_fn = torch.nn.MSELoss()
@@ -150,7 +165,7 @@ if __name__ == "__main__":
         json_hyp = json.load(file)
 
     wandb.init(
-        #mode="disabled",
+        mode="disabled",
 
         project="Linear AutoEncoder",
         name="Test Run 3",

@@ -1,7 +1,9 @@
 data:
-  train: filtered_data/train
-  val: filtered_data/val
+  train: small_filtered_data/train
+  val: small_filtered_data/val
+
+  aux_data: aux_data/temporal.csv
 
 model:
   save_dir: weights
-  save_freq: 10
+  save_freq: 5

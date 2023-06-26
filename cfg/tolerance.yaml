@@ -1,8 +1,10 @@
-data: filtered_data/train
+data: small_filtered_data/train
+aux_data: aux_data/temporal.csv
 save_dir: bounds
-scaler: Scalers_filtered/standard_scaler.pickle
-pca: PCAs_filtered/pca.pickle
-weights: weights/ydfbys5d_120.pt
+main_scaler: Scalers/partial_standard_scaler.pickle
+aux_scaler: Scalers/full_standard_scaler.pickle
+pca: PCAs/pca.pickle
+weights: weights/05.pt
 
 confidence: 0.99
 coverage: 0.99

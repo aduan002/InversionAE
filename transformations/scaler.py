@@ -4,7 +4,7 @@ import pickle
 
 from sklearn.preprocessing import StandardScaler
 
-class CustomStandardScaler:
+class PartialStandardScaler:
     def __init__(self) -> None:
         self.scaler = StandardScaler(with_mean=False, with_std=False)
 
@@ -36,10 +36,37 @@ class CustomStandardScaler:
         with open(file_path, "rb") as file:
             self.scaler = pickle.load(file)
 
+class FullStandardScaler:
+    def __init__(self) -> None:
+        self.scaler = StandardScaler(with_mean=False, with_std=False)
+
+    def fit(self, X):
+        self.scaler.fit(X)
+
+    def transform(self, X):
+        return self.scaler.transform(X)
+    
+    def fit_transform(self, X):
+        return self.scaler.fit_transform(X)
+    
+    def inverse_transform(self, X):
+        return self.scaler.inverse_transform(X)
+    
+    def save(self, file_dir, file_name):
+        if not os.path.exists(file_dir):
+            os.mkdir(file_dir)
+
+        with open(os.path.join(file_dir, file_name), "wb") as file:
+            pickle.dump(self.scaler, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load(self, file_path):
+        with open(file_path, "rb") as file:
+            self.scaler = pickle.load(file)
+
 if __name__ == "__main__":
     file_dir = "data/train"
 
-    scaler = CustomStandardScaler()
+    scaler = PartialStandardScaler()
 
     scaler.fit(file_dir)
 

@@ -3,5 +3,10 @@
     "epochs": 10,
     "learning_rate": 0.001,
     "patience": 20,
-    "weight_decay": 1.0e-8
+    "weight_decay": 1.0e-8,
+
+    "linear_num_hidden_layers": 3,
+    "lstm_hidden_size": 50,
+    "lstm_num_hidden_layers": 1,
+    "lstm_dropout": 0
 }

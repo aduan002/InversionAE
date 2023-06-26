@@ -1,6 +1,7 @@
-scaler: Scalers/standard_scaler.pickle
+data_scaler: Scalers/partial_standard_scaler.pickle
+aux_scaler: Scalers/full_standard_scaler.pickle
 pca: PCAs/pca.pickle
-weights: weights/best_so_far.pt
-data: data/train
+weights: weights/05.pt
+data: small_filtered_data/train
 upper_bounds_path: bounds/upper_bounds.npy
 save_dir: results
