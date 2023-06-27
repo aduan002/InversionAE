@@ -9,7 +9,7 @@ import os
 
 from model import AutoEncoder
 from dataset import InversionDataset
-from transformations.scaler import CustomStandardScaler
+from transformations.scaler import PartialStandardScaler, FullStandardScaler
 from transformations.reshaper import FileSpatialReshaper as SpatialReshaper
 
 def train_loop(dataloader, model, loss_fn, optimizer, device):
@@ -17,10 +17,10 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
     model.train()
     num_batches = len(dataloader)
     train_loss = 0
-    for batch, tensor in enumerate(tqdm(dataloader)):
+    for batch, (tensor, aux_tensor, _) in enumerate(tqdm(dataloader)):
         tensor = tensor.to(device)
         # Compute prediction and loss
-        pred = model(tensor)
+        pred = model(tensor, aux_tensor)
         loss = loss_fn(pred, tensor)
 
         # Backpropagation
@@ -40,9 +40,9 @@ def val_loop(dataloader, model, loss_fn, device):
     val_loss = 0
 
     with torch.no_grad():
-        for batch, tensor in enumerate(tqdm(dataloader)):
+        for batch, (tensor, aux_tensor, _) in enumerate(tqdm(dataloader)):
             tensor = tensor.to(device)
-            pred = model(tensor)
+            pred = model(tensor, aux_tensor)
             loss = loss_fn(pred, tensor)
 
             val_loss += loss.item()
@@ -58,6 +58,8 @@ def main(config, hyp):
     
     train_dir = config["data"]["train"]
     val_dir = config["data"]["val"]
+    aux_coordinates_path = config["data"]["aux_coordinates"]
+    aux_weather_path = config["data"]["aux_weather"]
 
     batch_size = hyp["batch_size"]
     epochs = hyp["epochs"]
@@ -68,7 +70,12 @@ def main(config, hyp):
     kernel_size = (hyp["kernel_size"]["depth"], hyp["kernel_size"]["height"], hyp["kernel_size"]["width"])
     stride = hyp["stride"]
     padding = hyp["padding"]
-    num_hidden_layers = hyp["num_hidden_layers"]
+    conv_num_hidden_layers = hyp["conv_num_hidden_layers"]
+    upsample_mode = hyp["upsample_mode"]
+
+    lstm_hidden_size = hyp["lstm_hidden_size"]
+    lstm_num_hidden_layers = hyp["lstm_num_hidden_layers"]
+    lstm_dropout = hyp["lstm_dropout"]
 
     save_dir = config["model"]["save_dir"]
     save_freq = config["model"]["save_freq"]
@@ -76,27 +83,35 @@ def main(config, hyp):
         os.makedirs(save_dir)
 
     # Scale
-    scaler = CustomStandardScaler()
+    scaler = PartialStandardScaler()
     scaler.fit(train_dir)
-    scaler.save("Scalers", "standard_scaler.pickle")
+    scaler.save("Scalers", "partial_standard_scaler.pickle")
+
+    aux_scaler = FullStandardScaler()
 
     # Reshape from 1D to 3D Depth, Height, Width
-    spatial_reshape_path = config["data"]["aux"]
-    reshaper = SpatialReshaper(spatial_reshape_path)
+    reshaper = SpatialReshaper(aux_coordinates_path)
     reshaper.build_reshape()
     reshaper.save("Reshapers", "spatial_reshape.pickle")
 
-    train_data = InversionDataset(train_dir, scaler=scaler, reshaper=reshaper)
-    val_data = InversionDataset(val_dir, scaler=scaler, reshaper=reshaper)
+    train_data = InversionDataset(train_dir, aux_weather_path, scaler=scaler, reshaper=reshaper, aux_scaler=aux_scaler)
+    val_data = InversionDataset(val_dir, aux_weather_path, scaler=scaler, reshaper=reshaper, aux_scaler=aux_scaler)
+
+    aux_scaler.save("Scalers", "full_standard_scaler.pickle")
 
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     val_dataloader = DataLoader(val_data, batch_size=batch_size)
 
-    model = AutoEncoder(in_out_shape = train_data.__getitem__(0).shape, 
+    model = AutoEncoder(in_out_shape = train_data.__getitem__(0)[0].shape, 
                         kernel_size=kernel_size, 
                         stride=stride, 
                         padding=padding, 
-                        num_hidden_layers=num_hidden_layers)
+                        conv_num_hidden_layers=conv_num_hidden_layers,
+                        upsample_mode=upsample_mode,
+                        lstm_input_shape=train_data.__getitem__(0)[1].shape,
+                        lstm_hidden_size=lstm_hidden_size,
+                        lstm_num_hidden_layers=lstm_num_hidden_layers,
+                        lstm_dropout=lstm_dropout)
     model.to(device)
 
     loss_fn = torch.nn.MSELoss()
@@ -159,7 +174,7 @@ if __name__ == "__main__":
         json_hyp = json.load(file)
 
     wandb.init(
-        #mode="disabled",
+        mode="disabled",
 
         project="Convolutional AutoEncoder",
         name="Test Run 1",

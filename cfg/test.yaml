@@ -1,10 +1,11 @@
 data: filtered_data/train
 aux_data: aux_data/temporal.csv
-save_dir: bounds
+save_dir: results
+
 main_scaler: Scalers/partial_standard_scaler.pickle
 aux_scaler: Scalers/full_standard_scaler.pickle
 reshaper: Reshapers/spatial_reshape.pickle
-weights: weights/10.pt
 
-confidence: 0.99
-coverage: 0.99
+weights: weights/10.pt
+upper_bounds_path: bounds/upper_bounds.npy
+

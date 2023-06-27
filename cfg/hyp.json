@@ -11,5 +11,10 @@
     },
     "stride": 1,
     "padding": 0,
-    "num_hidden_layers": 3
+    "conv_num_hidden_layers": 3,
+    "upsample_mode": "nearest",
+
+    "lstm_hidden_size": 50,
+    "lstm_num_hidden_layers": 1,
+    "lstm_dropout": 0
 }

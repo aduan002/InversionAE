@@ -2,9 +2,16 @@ import torch
 from torch.utils.data import Dataset
 import os
 import numpy as np
+import pandas as pd
+
+import re 
+from datetime import datetime, timedelta
 
 class InversionDataset(Dataset):
-    def __init__(self, file_dir, scaler = None, pca = None, reshaper = None) -> None:
+    def __init__(self, file_dir, aux_filepath, scaler = None, pca = None, reshaper = None,
+                 timesteps = 10, aux_scaler = None,
+                 aux_regex = r"([0-9]{4})([0-9]{2})([0-9]{2})_([0-9]{2})([0-9]{2})",
+                 eval_mode = False) -> None:
         super().__init__()
 
         self.file_dir = file_dir
@@ -14,6 +21,22 @@ class InversionDataset(Dataset):
         self.scaler = scaler
         self.pca = pca
         self.reshaper = reshaper
+        self.aux_scaler = aux_scaler
+
+        aux_data = pd.read_csv(aux_filepath)
+        aux_data.columns = ["Timestamp", "Temperature C", "Temperature F", "Rainfall"]
+        aux_data["Timestamp"] = pd.to_datetime(aux_data["Timestamp"], format="%m/%d/%Y %H:%M")
+        aux_data.set_index("Timestamp", inplace=True)
+        aux_data.drop(["Temperature C"], axis=1, inplace=True)
+
+        if aux_scaler is not None and eval_mode is False:
+            aux_data = pd.DataFrame(self.aux_scaler.fit_transform(aux_data), columns=aux_data.columns, index=aux_data.index)
+        elif aux_scaler is not None and eval_mode is True:
+            aux_data = pd.DataFrame(self.aux_scaler.transform(aux_data), columns=aux_data.columns, index=aux_data.index)
+
+        self.aux_data = aux_data
+        self.timesteps = timesteps
+        self.aux_regex = aux_regex
 
     def __len__(self):
         return self.length
@@ -58,6 +81,21 @@ class InversionDataset(Dataset):
                 idx += 1
             item = shape_item
 
-        
+
+        year, month, day, hour, minute = re.findall(self.aux_regex, file_name)[0]
+
+        current_time = datetime(int(year), int(month), int(day), int(hour), int(minute))
+        # The closest time is the biggest time that is smaller or equal to the current time.
+        closest_time = max(date for date in self.aux_data.index if date <= current_time)
+
+        # This is the time granularity in the dataset
+        delta = timedelta(minutes=15)
+
+        # Get the last self.timesteps rows before the current time (and including the closest time)
+        timesteps_time = self.aux_data.loc[closest_time - delta * (self.timesteps - 1): closest_time]
+        weather_conditions = timesteps_time.to_numpy(dtype=np.float32)
+        # Pad the beginning with zeros for the case where we don't have the time information self.timesteps rows back.
+        weather_conditions = np.pad(weather_conditions, ((self.timesteps - weather_conditions.shape[0], 0),(0,0)))
+
         item = item.astype(np.float32)
-        return torch.from_numpy(item), file_name
+        return torch.from_numpy(item), torch.from_numpy(weather_conditions), file_name
