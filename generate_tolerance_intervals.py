@@ -85,6 +85,7 @@ def main(config, hyp):
     lstm_hidden_size = hyp["lstm_hidden_size"]
     lstm_num_hidden_layers = hyp["lstm_num_hidden_layers"]
     lstm_dropout = hyp["lstm_dropout"]
+    lstm_steps = hyp["lstm_steps"]
 
     pca = None
     if pca_path is not None:
@@ -101,7 +102,7 @@ def main(config, hyp):
         aux_scaler.load(aux_scaler_path)
 
 
-    data = InversionDataset(data_path, aux_filepath, scaler=main_scaler, pca=pca, aux_scaler=aux_scaler, eval_mode=True)
+    data = InversionDataset(data_path, aux_filepath, scaler=main_scaler, pca=pca, aux_scaler=aux_scaler, timesteps=lstm_steps, eval_mode=True)
     dataloader = DataLoader(data, batch_size=1, shuffle=False)
 
     model = AutoEncoder(in_out_shape = data.__getitem__(0)[0].shape, 

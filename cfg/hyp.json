@@ -8,5 +8,6 @@
     "linear_num_hidden_layers": 3,
     "lstm_hidden_size": 50,
     "lstm_num_hidden_layers": 1,
-    "lstm_dropout": 0
+    "lstm_dropout": 0,
+    "lstm_steps": 10
 }
