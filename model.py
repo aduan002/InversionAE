@@ -13,8 +13,9 @@ class Encoder(nn.Module):
         self.linear_layers.append(nn.BatchNorm1d(num_features=out_features))
         self.linear_layers.append(nn.ReLU())
         for i in range(1, linear_num_hidden_layers + 1):
-            in_features = out_features
-            out_features = out_features // 2
+            # NOTE: max(features, constant) prevents collapse of features to 0 when num_hidden_layers large.
+            in_features = max(out_features, 1)
+            out_features = max(out_features // 2, 1)
 
             self.linear_layers.append(nn.Linear(in_features=in_features, out_features=out_features))
             self.linear_layers.append(nn.BatchNorm1d(num_features=out_features))
@@ -34,9 +35,9 @@ class Encoder(nn.Module):
 
         x_1, (h_t, c_t) = self.lstm(x_1)
         x_1 = self.relu(x_1)
-        x_1 = self.lstm_L0(x_1)
         # Just care about the output of the last LSTM in the sequence
         x_1 = x_1[:,-1,:]
+        x_1 = self.lstm_L0(x_1)
 
         x = torch.add(x_0, x_1, alpha=1)
         return x
@@ -45,7 +46,7 @@ class Decoder(nn.Module):
     def __init__(self, output_shape, linear_features, num_hidden_layers) -> None:
         super().__init__()
 
-        in_features = linear_features // 2**num_hidden_layers
+        in_features = max(linear_features // 2**num_hidden_layers, 1)
 
         self.layers = nn.ModuleList()
 

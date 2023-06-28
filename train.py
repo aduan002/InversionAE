@@ -46,7 +46,7 @@ def val_loop(dataloader, model, loss_fn, device):
             aux_tensor = aux_tensor.to(device)
             pred = model(tensor, aux_tensor)
             loss = loss_fn(pred, tensor)
-
+            
             val_loss += loss.item()
 
     val_loss /= num_batches
