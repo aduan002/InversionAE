@@ -19,6 +19,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
     train_loss = 0
     for batch, (tensor, aux_tensor, _) in enumerate(tqdm(dataloader)):
         tensor = tensor.to(device)
+        aux_tensor = aux_tensor.to(device)
         # Compute prediction and loss
         pred = model(tensor, aux_tensor)
         loss = loss_fn(pred, tensor)
@@ -42,6 +43,7 @@ def val_loop(dataloader, model, loss_fn, device):
     with torch.no_grad():
         for batch, (tensor, aux_tensor, _) in enumerate(tqdm(dataloader)):
             tensor = tensor.to(device)
+            aux_tensor = aux_tensor.to(device)
             pred = model(tensor, aux_tensor)
             loss = loss_fn(pred, tensor)
 
@@ -166,7 +168,7 @@ if __name__ == "__main__":
         json_hyp = json.load(file)
 
     wandb.init(
-        #mode="disabled",
+        mode="disabled",
 
         project="Time Linear AutoEncoder",
         name="Run 1",

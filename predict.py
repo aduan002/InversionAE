@@ -77,6 +77,7 @@ def main(config, hyp):
         for batch, (tensor, aux_tensor, filename) in enumerate(tqdm(dataloader)):
             filename = filename[0] # for some reason, this returns the filename as (filename,) # TODO: Fix it.
             tensor = tensor.to(device)
+            aux_tensor = aux_tensor.to(device)
             pred = model(tensor, aux_tensor)
             tensor = tensor.to("cpu")
 

@@ -124,6 +124,7 @@ def main(config, hyp):
         print("Calculating Percent Errors:")
         for batch, (tensor, aux_tensor, _) in enumerate(tqdm(dataloader)):
             tensor = tensor.to(device)
+            aux_tensor = aux_tensor.to(device)
             pred = model(tensor, aux_tensor)
             tensor = tensor.to("cpu")
 

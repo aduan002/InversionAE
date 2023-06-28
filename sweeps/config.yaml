@@ -48,3 +48,7 @@ parameters:
     min: 0
     max: 0.9
     distribution: uniform
+  lstm_steps:
+    min: 50
+    max: 700
+    distribution: int_uniform
