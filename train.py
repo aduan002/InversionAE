@@ -70,6 +70,7 @@ def main(config, hyp):
     lstm_hidden_size = hyp["lstm_hidden_size"]
     lstm_num_hidden_layers = hyp["lstm_num_hidden_layers"]
     lstm_dropout = hyp["lstm_dropout"]
+    lstm_steps = hyp["lstm_steps"]
 
     save_dir = config["model"]["save_dir"]
     save_freq = config["model"]["save_freq"]
@@ -88,8 +89,8 @@ def main(config, hyp):
 
     aux_scaler = FullStandardScaler()
 
-    train_data = InversionDataset(train_dir, aux_filepath, scaler=scaler, pca=pca, aux_scaler=aux_scaler)
-    val_data = InversionDataset(val_dir, aux_filepath, scaler=scaler, pca=pca, aux_scaler=aux_scaler)
+    train_data = InversionDataset(train_dir, aux_filepath, scaler=scaler, pca=pca, aux_scaler=aux_scaler, timesteps=lstm_steps)
+    val_data = InversionDataset(val_dir, aux_filepath, scaler=scaler, pca=pca, aux_scaler=aux_scaler, timesteps=lstm_steps)
 
     aux_scaler.save("Scalers", "full_standard_scaler.pickle")
 
@@ -146,8 +147,8 @@ def main(config, hyp):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-         prog = "Linear AutoEncoder",
-         description = "Training an AutoEncoder using Linear Layers"
+         prog = "Time Linear AutoEncoder",
+         description = "Training an AutoEncoder using Linear and LSTM Layers"
     )
     parser.add_argument("-c", "--config", required=True)
     parser.add_argument("-p", "--hyp", required=True)
@@ -165,11 +166,11 @@ if __name__ == "__main__":
         json_hyp = json.load(file)
 
     wandb.init(
-        mode="disabled",
+        #mode="disabled",
 
-        project="Linear AutoEncoder",
-        name="Test Run 3",
-        notes="Training Linear AutoEncoder on Inversion data",
+        project="Time Linear AutoEncoder",
+        name="Run 1",
+        notes="Training Linear AutoEncoder on Inversion data and Weather data",
         
         config = json_hyp.copy()
     )
