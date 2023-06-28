@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 class InversionDataset(Dataset):
     def __init__(self, file_dir, aux_filepath, scaler = None, pca = None, reshaper = None,
-                 timesteps = 10, aux_scaler = None,
+                 aux_scaler = None, timesteps = 10,
                  aux_regex = r"([0-9]{4})([0-9]{2})([0-9]{2})_([0-9]{2})([0-9]{2})",
                  eval_mode = False) -> None:
         super().__init__()

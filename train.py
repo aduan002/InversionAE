@@ -76,6 +76,7 @@ def main(config, hyp):
     lstm_hidden_size = hyp["lstm_hidden_size"]
     lstm_num_hidden_layers = hyp["lstm_num_hidden_layers"]
     lstm_dropout = hyp["lstm_dropout"]
+    lstm_steps = hyp["lstm_steps"]
 
     save_dir = config["model"]["save_dir"]
     save_freq = config["model"]["save_freq"]
@@ -94,8 +95,8 @@ def main(config, hyp):
     reshaper.build_reshape()
     reshaper.save("Reshapers", "spatial_reshape.pickle")
 
-    train_data = InversionDataset(train_dir, aux_weather_path, scaler=scaler, reshaper=reshaper, aux_scaler=aux_scaler)
-    val_data = InversionDataset(val_dir, aux_weather_path, scaler=scaler, reshaper=reshaper, aux_scaler=aux_scaler)
+    train_data = InversionDataset(train_dir, aux_weather_path, scaler=scaler, reshaper=reshaper, aux_scaler=aux_scaler, timesteps=lstm_steps)
+    val_data = InversionDataset(val_dir, aux_weather_path, scaler=scaler, reshaper=reshaper, aux_scaler=aux_scaler, timesteps=lstm_steps)
 
     aux_scaler.save("Scalers", "full_standard_scaler.pickle")
 
@@ -155,8 +156,8 @@ def main(config, hyp):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-         prog = "Convolutional AutoEncoder",
-         description = "Training an AutoEncoder using Convolutional Layers and the given spatial correlation"
+         prog = "Time Convolutional AutoEncoder",
+         description = "Training an AutoEncoder using Convolutional Layers on the given spatial correlation and LSTM on the given weather data."
     )
     parser.add_argument("-c", "--config", required=True)
     parser.add_argument("-p", "--hyp", required=True)
@@ -176,9 +177,9 @@ if __name__ == "__main__":
     wandb.init(
         mode="disabled",
 
-        project="Convolutional AutoEncoder",
-        name="Test Run 1",
-        notes="Training Convolutional AutoEncoder on Inversion data using the given coordinates to reshape",
+        project="Time Convolutional AutoEncoder",
+        name="Run 1",
+        notes="Training LSTM Convolutional AutoEncoder on Inversion data using the given coordinates and weather data.",
         
         config = json_hyp.copy()
     )
