@@ -1,0 +1,6 @@
+scaler: Scalers/standard_scaler.pickle
+reshaper: Reshapers/new_spatial_reshape.pickle
+weights: weights/h4arerl2_130.pt
+data: filtered_data/test
+upper_bounds_path: bounds/h4arerl2_upper_bounds-conf_0.99-cov_0.99.npy
+save_dir: h4arerl2_results_test

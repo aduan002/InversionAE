@@ -7,6 +7,7 @@ import numpy as np
 import os
 from scipy.stats import norm
 import math
+import json
 
 from transformations.reshaper import FileSpatialReshaper
 from transformations.scaler import CustomStandardScaler
@@ -67,13 +68,18 @@ def percent_error(y, y_hat):
     percent_error = difference / exact * 100
     return percent_error
 
-def main(config):
+def main(config, hyp):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     data_path = config["data"]
     save_dir = config["save_dir"]
     scaler_path = config["scaler"]
     reshaper_path = config["reshaper"]
     weights_path = config["weights"]
+
+    kernel_size = (hyp["kernel_size"]["depth"], hyp["kernel_size"]["height"], hyp["kernel_size"]["width"])
+    stride = hyp["stride"]
+    padding = hyp["padding"]
+    num_hidden_layers = hyp["num_hidden_layers"]
 
     confidence = config["confidence"]
     coverage = config["coverage"]
@@ -91,7 +97,11 @@ def main(config):
     data = InversionDataset(data_path, scaler=scaler, reshaper=reshaper)
     dataloader = DataLoader(data, batch_size=1, shuffle=False)
 
-    model = AutoEncoder(in_out_shape = data.__getitem__(0)[0].shape, num_hidden_layers=3)
+    model = AutoEncoder(in_out_shape = data.__getitem__(0)[0].shape, 
+                        kernel_size=kernel_size, 
+                        stride=stride, 
+                        padding=padding, 
+                        num_hidden_layers=num_hidden_layers)
     model.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu')))
     model.eval()
 
@@ -138,8 +148,10 @@ if __name__ == "__main__":
          description = "Generate Upper Bounded Tolerance Intervals for a ConvolutionalAE"
     )
     parser.add_argument("-c", "--config", required=True)
+    parser.add_argument("-p", "--hyp", required=True)
     args = parser.parse_args()
     config_path = args.config
+    hyp_path = args.hyp
 
     with open(config_path, "r") as file:
         try:
@@ -147,6 +159,9 @@ if __name__ == "__main__":
         except yaml.YAMLError as e:
             print(e)
 
-    main(yaml_config)
+    with open(hyp_path, "r") as file:
+        json_hyp = json.load(file)
+
+    main(yaml_config, json_hyp)
 
     

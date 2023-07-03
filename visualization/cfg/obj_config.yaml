@@ -1,0 +1,3 @@
+spatial_data: aux_data/spatial.txt
+input_dir: h4arerl2_results_test
+save_dir: h4arerl2_results_test_obj

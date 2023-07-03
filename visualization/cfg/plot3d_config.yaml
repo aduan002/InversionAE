@@ -1,0 +1,11 @@
+input_path: "h4arerl2_results_test_obj" # Can be a file or a folder
+show_plot: False
+save_image: True
+save_dir: "visualization/h4arerl2_images_test" # Only used if save_image is True. Must be a directory.
+
+color_scheme: # Colors must be between 0-1, and in RGB format
+  # Bottom color
+  - 0,0,0.545 # Dark Blue
+  - 1,0.843,0 # Gold
+  - 1,0,0     # Bright Red
+  # Top color
