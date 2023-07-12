@@ -6,7 +6,8 @@ from sklearn.preprocessing import StandardScaler
 
 class PartialStandardScaler:
     def __init__(self, transformer = None) -> None:
-        self.scaler = StandardScaler(with_mean=False, with_std=False)
+        #self.scaler = StandardScaler(with_mean=False, with_std=False)
+        self.scaler = StandardScaler()
 
         self.transformer = transformer
 
@@ -40,7 +41,8 @@ class PartialStandardScaler:
 
 class FullStandardScaler:
     def __init__(self) -> None:
-        self.scaler = StandardScaler(with_mean=False, with_std=False)
+        #self.scaler = StandardScaler(with_mean=False, with_std=False)
+        self.scaler = StandardScaler()
 
     def fit(self, X):
         self.scaler.fit(X)

@@ -33,20 +33,32 @@ class Encoder(nn.Module):
                        lstm_input_shape, lstm_hidden_size, lstm_num_hidden_layers, lstm_dropout) -> None:
         super().__init__()
 
+        self.kernel_list = [kernel_size]
+
         self.layers = nn.ModuleList()
 
         d_out, h_out, w_out = None, None, None
         for _ in range(conv_num_hidden_layers):
             self.layers.append(nn.Conv3d(in_channels=1, out_channels=1, kernel_size=kernel_size, stride=stride, padding=padding))
-            self.layers.append(nn.ReLU())
+            #self.layers.append(nn.ReLU())
 
             # NOTE: The channels are kept the same throughout...
             channels, d_out, h_out, w_out = find_output_shape(input_shape, kernel_size, padding, stride)
+            kernel_size = (min(kernel_size[0], d_out), min(kernel_size[1], h_out), min(kernel_size[2], w_out))
+
+            self.kernel_list.append(kernel_size)
+
             input_shape = (channels, d_out, h_out, w_out)
 
-        self.layers.append(nn.MaxPool3d(kernel_size=kernel_size, stride=stride, padding=padding))
-        channels, d_out, h_out, w_out = find_output_shape(input_shape, kernel_size, padding, stride)
-        input_shape = (channels, d_out, h_out, w_out)
+        self.layers.append(nn.Tanh())
+        #self.layers.append(nn.MaxPool3d(kernel_size=kernel_size, stride=stride, padding=padding))
+
+        #channels, d_out, h_out, w_out = find_output_shape(input_shape, kernel_size, padding, stride)
+        #kernel_size = (min(kernel_size[0], d_out), min(kernel_size[1], h_out), min(kernel_size[2], w_out))
+
+        #self.kernel_list.append(kernel_size)
+
+        #input_shape = (channels, d_out, h_out, w_out)
 
 
         self.lstm = nn.LSTM(input_size = lstm_input_shape[1], hidden_size = lstm_hidden_size, num_layers = lstm_num_hidden_layers, dropout = lstm_dropout)
@@ -70,14 +82,15 @@ class Encoder(nn.Module):
         return x
 
 class Decoder(nn.Module):
-    def __init__(self, output_shape, kernel_size, stride, padding, num_hidden_layers, upsample_mode) -> None:
+    def __init__(self, output_shape, kernel_list, stride, padding, num_hidden_layers, upsample_mode) -> None:
         super().__init__()
 
         self.layers = nn.ModuleList()
 
-        for _ in range(num_hidden_layers):
+        for idx in range(num_hidden_layers):
+            kernel_size = kernel_list[-(idx+1)]
             self.layers.append(nn.ConvTranspose3d(in_channels=1, out_channels=1, kernel_size=kernel_size, stride=stride, padding=padding))
-            self.layers.append(nn.ReLU())
+        self.layers.append(nn.Tanh())
         self.upsample = nn.Upsample(size = output_shape[1:], mode = upsample_mode)
 
         self.output_shape = output_shape
@@ -95,7 +108,8 @@ class AutoEncoder(nn.Module):
         # in_out_shape should be channels, depth, height, width
         self.encoder = Encoder(input_shape=in_out_shape, kernel_size=kernel_size, stride=stride, padding=padding, conv_num_hidden_layers=conv_num_hidden_layers,
                                lstm_input_shape=lstm_input_shape, lstm_hidden_size=lstm_hidden_size, lstm_num_hidden_layers=lstm_num_hidden_layers, lstm_dropout=lstm_dropout)
-        self.decoder = Decoder(output_shape=in_out_shape, kernel_size=kernel_size, stride=stride, padding=padding, num_hidden_layers=conv_num_hidden_layers, upsample_mode=upsample_mode)
+        self.decoder = Decoder(output_shape=in_out_shape, kernel_list=self.encoder.kernel_list, stride=stride, padding=padding, num_hidden_layers=conv_num_hidden_layers, 
+                               upsample_mode=upsample_mode)
 
     def forward(self, x_0, x_1):
         x = self.encoder(x_0, x_1)
