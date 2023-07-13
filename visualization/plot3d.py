@@ -33,6 +33,7 @@ def obj_data_to_mesh3d(file_path):
     return np.array(vertices), np.array(faces)
 
 def main(config):
+    OFFSET = 0.0000001
     SCALE_FACTOR = 1.5
 
     input_path  = config["input_path"]
@@ -42,9 +43,19 @@ def main(config):
     color_scheme = config["color_scheme"]
 
     colors = []
-    for color in color_scheme:
+    spacing = []
+    space = (1 - OFFSET) / (len(color_scheme) - 2)
+    for idx in range(1, len(color_scheme) - 1):
+        spacing.append(space * idx + OFFSET)
+    spacing.insert(0,0)
+    spacing.insert(1, OFFSET)
+
+    for idx, color in enumerate(color_scheme):
         r,g,b = color.split(",")
-        colors.append((float(r),float(g),float(b)))
+        color = (float(r), float(g), float(b))
+        value = spacing[idx]
+        #colors.append((value, color))
+        colors.append(color)
 
 
     input_dir = None
@@ -60,7 +71,7 @@ def main(config):
 
     cmap = LinearSegmentedColormap.from_list(name="Plot3D Custom Color Scheme", colors=colors)
 
-    for filename in filenames:
+    for filename in tqdm(filenames):
         vertices, faces = obj_data_to_mesh3d(os.path.join(input_dir, filename))
         xyz = vertices[:, :3]
         w = vertices[:, 3]
@@ -89,6 +100,7 @@ def main(config):
             os.remove(temp_file.name)
 
             plotter.screenshot(os.path.join(save_dir, filename.split(".")[0] + ".png"), transparent_background=True)
+            plotter.close()
 
             """ # NOTE: Some samples code to do a full orbit around the x-axis.
             plotter.show(auto_close=False)

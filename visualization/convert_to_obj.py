@@ -20,6 +20,9 @@ def main(config):
     filenames = os.listdir(input_dir)
     print("Converting files:")
     for filename in tqdm(filenames):
+        if os.path.isfile(os.path.join(save_dir, filename.split(".")[0] + ".obj")):
+            continue
+        
         errors = np.loadtxt(os.path.join(input_dir, filename), dtype=np.float32)
 
         with open(os.path.join(save_dir, filename.split(".")[0] + ".obj"), "w") as file:

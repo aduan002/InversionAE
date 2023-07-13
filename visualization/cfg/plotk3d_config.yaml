@@ -1,0 +1,10 @@
+input_path: anomalies_val_zones=4,5_obj # Can be a file or a folder
+save_dir: anomalies_val_zones=4,5
+
+color_scheme: # Colors must be in hex format
+  # Bottom color
+  - 0x00008A # Dark Blue
+  - 0xFFD600 # Gold
+  #- 1,0.518,0 # Orange
+  - 0xFF0000     # Bright Red
+  # Top color

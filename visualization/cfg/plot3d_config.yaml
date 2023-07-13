@@ -1,11 +1,12 @@
-input_path: "results_obj" # Can be a file or a folder
-show_plot: False
-save_image: True
-save_dir: "visualization/images" # Only used if save_image is True. Must be a directory.
+input_path: hyp_results_anomalies_val_d=40_obj/FA3_8L20220928_1649.obj #hyp_results_anomalies_val_zones=4,5_factor=1.3_obj #anomalies_val_zones=4,5_obj/FA3_8L20220928_1649.obj # Can be a file or a folder
+show_plot: True
+save_image: False
+save_dir: visualization/hyp_results_anomalies_val_zones=4,5_factor=1.3_VALUE # Only used if save_image is True. Must be a directory.
 
 color_scheme: # Colors must be between 0-1, and in RGB format
   # Bottom color
   - 0,0,0.545 # Dark Blue
   - 1,0.843,0 # Gold
-  - 1,0,0     # Bright Read
+  #- 1,0.518,0 # Orange
+  - 1,0,0     # Bright Red
   # Top color
