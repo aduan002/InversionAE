@@ -15,7 +15,10 @@ from dataset import InversionDataset
 from model import AutoEncoder
 
 def percent_error(y, y_hat):
-    difference = torch.abs(y - y_hat)
+    # NOTE: In the case the conductivity is low, but the model thinks it should be high, it is not considered an anomaly.
+    # Only when the conductivity is high is it considered an anomaly.
+    difference = y - y_hat
+    difference[difference < 0] = 0
     exact = torch.abs(y)
     percent_error = difference / exact * 100
     return percent_error
@@ -86,6 +89,7 @@ def main(config, hyp):
     with torch.no_grad():
         print("Calculating Percent Errors:")
         for batch, (tensor, aux_tensor, filename) in enumerate(tqdm(dataloader)):
+            filename = filename[0]
             tensor = tensor.to(device)
             pred = model(tensor, aux_tensor)
             tensor = tensor.to("cpu")
@@ -97,12 +101,13 @@ def main(config, hyp):
 
             for error in errors: # The batch size is 1, so not really needed at the moment.
 
-                # NOTE: For now, assuming anomalies happen when values are unusually high and it is fine if they are unusually low... gotta ask about that
-                delta = error - upper_bounds
+                # NOTE: # The 10 is a heurisitc that improves the results further... I experimented with 5 and 7.5 but they still found non-anomalies as anomalies
+                delta = error - (upper_bounds + 10) 
                 delta[delta < 0] = 0
 
                 if np.any(delta):
-                    print("Anomaly within {0}...".format(filename))
+                    #print("Anomaly within {0}...".format(filename))
+                    pass
 
                 save_name = filename.split(".")[0] + ".sig"
                 np.savetxt(os.path.join(save_dir, save_name), delta, fmt="%s")
