@@ -18,7 +18,9 @@ class FilterData:
             self.index_filter[i] = row_idx
 
     def filter(self, X):
-        data = np.empty((self.index_filter.shape), dtype="<U25")
+        output_shape = (self.index_filter.shape[0], ) + X.shape[1:]
+        #data = np.empty((self.index_filter.shape), dtype="<U25")
+        data = np.empty((output_shape), dtype="<U25")
 
         for idx, row_idx in enumerate(self.index_filter):
             data[idx] = X[row_idx]
@@ -39,8 +41,10 @@ class FilterData:
 
 if __name__ == "__main__":
     file_path = "aux_data/spatial.txt"
-    input_dir = "Anomalies_val_zones=4,5_factor=1.3"
-    output_dir = "filtered_anomalies_val_zones=4,5_factor=1.3"
+    input_dir = "test_ground_truth_seed=1_factor=1.3_dist=1"
+    #input_dir = "train_ground_truth_seed=0_dist=20"
+    output_dir = "filtered_test_ground_truth_seed=1_factor=1.3_dist=1"
+    #output_dir = "filtered_train_ground_truth_seed=0_dist=20"
 
     data_filter = FilterData(file_path)
     data_filter.filter_dataset(input_dir, output_dir)

@@ -103,7 +103,7 @@ def obj_data_to_mesh3d(file_path):
 
 def get_colors(color_scheme, spacing, w):
     colors = []
-    norm_w = w / 100 # Percent error is a percent, we want decimals.
+    norm_w = w / 100 #100 # Percent error is a percent, we want decimals.
     for v in norm_w:
         color = None
         for idx in range(len(spacing)):

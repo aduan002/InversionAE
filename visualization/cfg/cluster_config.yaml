@@ -1,0 +1,4 @@
+spatial_data: aux_data/spatial.txt
+input_dir: test_ground_truth_seed=0_dist=1
+save_dir: test_ground_truth_seed=0_dist=1_obj
+num_neighbors: 5

@@ -2,6 +2,8 @@ from tqdm import tqdm
 import numpy as np
 import os
 
+from filter import FilterData
+
 class AnomalyGeneration:
     def __init__(self, node_path, element_path, translation_path, output_dir) -> None:
         self.nodes = np.genfromtxt(fname = node_path,usecols=(1,2,3),skip_header=1,skip_footer=1)
@@ -14,6 +16,11 @@ class AnomalyGeneration:
         self.elements = self.elements - 1 # 1-indexing to 0-indexing
 
         self.zones = np.genfromtxt(fname = element_path,dtype=np.int32, skip_header=1, usecols=5)
+
+        file_path = "aux_data/spatial.txt"
+        file_filter = FilterData(file_path=file_path)
+        self.elements = file_filter.filter(self.elements).astype(dtype=int)
+        self.zones = file_filter.filter(self.zones).astype(dtype=int)
 
         self.output_dir = output_dir
         if not os.path.exists(output_dir):
@@ -72,7 +79,8 @@ class AnomalyGeneration:
             x,y,z = self.nodes[indices[idx]]
             leak_point = (x,y,z)
 
-            self.generate_anomaly(file_path=os.path.join("sigmas", file_name), leak_point=leak_point, distance=distance, factor=factor)
+            #self.generate_anomaly(file_path=os.path.join("sigmas", file_name), leak_point=leak_point, distance=distance, factor=factor)
+            self.generate_anomaly(file_path=os.path.join(file_dir, file_name), leak_point=leak_point, distance=distance, factor=factor)
             idx += 1
 
             log_info[file_name] = leak_point
@@ -89,13 +97,13 @@ class AnomalyGeneration:
 
 
 if __name__ == "__main__":
-    np.random.seed(1) # Remove randomness for testing...
+    np.random.seed(0) # Remove randomness for testing...
 
     node_path = "F3B.1.node"
     element_path = "F3B.1.ele"
     translation_path = "F3B.trn"
-    output_dir = "test_ground_truth_seed=1_factor=1.3_dist=10" # "Anomalies"
-    #output_dir = "test_ground_truth_seed=0_dist=20"
+    #output_dir = "test_seed=0_factor=1.3_dist=1" # "Anomalies"
+    output_dir = "test_ground_truth_seed=0_dist=1"
 
     file_name = "FA3_8L20220928_2001.sig"
     file_dir = "filtered_data/test"
