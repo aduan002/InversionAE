@@ -3,10 +3,10 @@ This branch contains code that is not deep learning specific but still needed fo
 
 ## Data Split
 The `train_test_split.py` script splits the data into train, validation, and test sets that have a distribution similar to the distribution.
-The `filter.py` script uses [spatial.txt](https://github.com/Aduan002/InversionAE/tree/AuxiliaryCode) to choose which rows of the data to use.
+The `filter.py` script uses [spatial.txt](https://github.com/Aduan002/InversionAE/releases/download/v1.0.0/spatial.txt) to choose which rows of the data to use.
 
 ## Generate Anomalies
-The `generate_anomalies.py` script increases the conductivity values in a radius R around a point P by a factor N. It uses [node](https://github.com/Aduan002/InversionAE/tree/AuxiliaryCode), [element](https://github.com/Aduan002/InversionAE/tree/AuxiliaryCode), and [translation](https://github.com/Aduan002/InversionAE/tree/AuxiliaryCode) files. The `node` file contains each point and its x, y, and z position. The `element` file contains the tetrahedron index, the four points that make up the tetrahedron and the zone the tetrahedron belongs to. The `translation` file contains x, y, and z translations on the x, y, and z values in the `node` file.
+The `generate_anomalies.py` script increases the conductivity values in a radius R around a point P by a factor N. It uses [node](https://github.com/Aduan002/InversionAE/releases/download/v1.0.0/F3B.1.node), [element](https://github.com/Aduan002/InversionAE/releases/download/v1.0.0/F3B.1.ele), and [translation](https://github.com/Aduan002/InversionAE/releases/download/v1.0.0/F3B.trn) files. The `node` file contains each point and its x, y, and z position. The `element` file contains the tetrahedron index, the four points that make up the tetrahedron and the zone the tetrahedron belongs to. The `translation` file contains x, y, and z translations on the x, y, and z values in the `node` file.
 
 The `generate_filtered_anomalies.py` script is the same as the `generate_anomalies.py` script but the elements and zones are filtered before being used to create anomalies on already filtered data.
 
